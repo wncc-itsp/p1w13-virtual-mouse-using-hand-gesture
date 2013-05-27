@@ -11,10 +11,15 @@ while count<1000:
 	hsv_image=cv.CreateImage(cv.GetSize(image),8,3)
 	hsv_mask = cv.CreateImage( cv.GetSize(image), 8, 1);
 	hsv_edge = cv.CreateImage( cv.GetSize(image), 8, 1);
-	hsv_min = cv.Scalar(0, 30, 80, 0);
+	hsv_min = cv.Scalar(0, 30, 60, 0);
 	hsv_max = cv.Scalar(20, 150, 255, 0);
 	cv.CvtColor(image,hsv_image,cv.CV_BGR2HSV)
 	cv.InRangeS (hsv_image, hsv_min, hsv_max, hsv_mask)
+	element_shape = cv.CV_SHAPE_RECT
+	pos=1
+	element = cv.CreateStructuringElementEx(pos*2+1, pos*2+1, pos, pos, element_shape)
+	cv.Dilate(hsv_mask,hsv_mask,element,1)
+#	cv.Erode(hsv_mask,hsv_mask,element,2)
 	cv.Smooth(hsv_mask, hsv_mask, cv.CV_GAUSSIAN, 15,15,0,0)
 #	cv.Threshold(grey,grey, 150,255,1)
 #	dst_16s2 = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_16S, 1)
@@ -26,16 +31,20 @@ while count<1000:
 	result=0
 	result2=0
 	contours2 = contours
+	contoursCopy=contours
+	hull=False
 	while contours:
-		result = abs( cv.ContourArea( contours ) );
+		result = abs( cv.ContourArea( contours ) )
 		if result>result2:
 			contours2=contours
+			hull = cv.ConvexHull2(contours, cv.CreateMemStorage(),cv.CV_CLOCKWISE,1)
+			defects=cv.ConvexityDefects(contours2, hull, cv.CreateMemStorage())
 		contours = contours.h_next()
-#	hull=cv.ConvexHull2( contours2, cv.CreateMemStorage(),cv.CV_CLOCKWISE,1)
-	cv.DrawContours(des, contours2, (255,0,0), (0,255,0), 0,5)
-#	cv.DrawContours(des, hull, randomColor(), (0,255,0), 0,5)	
+		
+	cv.DrawContours(hsv_image, contours2, (255,0,0), (0,255,0), 0,5)
+	if hull:
+		cv.DrawContours(hsv_image, hull, (0,0,0), (0,255,0), 0,5)	
 	cv.ShowImage('Image_Window',hsv_image)
-	cv.ShowImage('dest_Window',des)
 	if cv.WaitKey(2)== 27:
 		break
 	count+=1
