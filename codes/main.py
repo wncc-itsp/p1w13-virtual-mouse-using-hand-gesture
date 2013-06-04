@@ -24,11 +24,11 @@ mouse = PyMouse()
 width,height= mouse.screen_size()
 capture=cv.CaptureFromCAM(-1)
 count=0
-cv.NamedWindow("Image_Window")	
-cv.CreateTrackbar("min-saturation", "Image_Window", minsat, 255, changeMinSat );
-cv.CreateTrackbar("max-saturation", "Image_Window", maxsat, 255, changeMaxSat );
-cv.CreateTrackbar("min-hue", "Image_Window", minhue, 255, changeMinHue );
-cv.CreateTrackbar("max-hue", "Image_Window", maxhue, 255, changeMaxHue );
+#cv.NamedWindow("Image_Window")	
+#cv.CreateTrackbar("min-saturation", "Image_Window", minsat, 255, changeMinSat );
+#cv.CreateTrackbar("max-saturation", "Image_Window", maxsat, 255, changeMaxSat );
+#cv.CreateTrackbar("min-hue", "Image_Window", minhue, 255, changeMinHue );
+#cv.CreateTrackbar("max-hue", "Image_Window", maxhue, 255, changeMaxHue );
 while count<1000:
 	image=cv.QueryFrame(capture)
 	w,h=cv.GetSize(image)
@@ -46,7 +46,7 @@ while count<1000:
 	pos=1
 	element = cv.CreateStructuringElementEx(pos*2+1, pos*2+1, pos, pos, element_shape)
 	cv.Dilate(hsv_mask,hsv_mask,element,2)
-#	cv.Erode(hsv_mask,hsv_mask,element,2)
+	cv.Erode(hsv_mask,hsv_mask,element,2)
 	cv.Smooth(hsv_mask, hsv_mask, cv.CV_MEDIAN, 27,0,0,0)
 #	cv.Threshold(grey,grey, 150,255,1)
 #	dst_16s2 = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_16S, 1)
@@ -69,16 +69,34 @@ while count<1000:
 	if contours2:
 		hull=cv.ConvexHull2(contours2, cv.CreateMemStorage(),cv.CV_CLOCKWISE,0)
 		defects=cv.ConvexityDefects(contours2, hull, cv.CreateMemStorage())	
-		print len(defects)
+
 		cv.DrawContours(blank, contours2, (255,0,0), (0,255,0), 0,5)
-		for defect in defects:
+		noOfDefects=0
+		for defect in defects:																				
 			start,end,far,d = defect
-			cv.Line(blank,start,end,[0,255,0],2)
-			cv.Circle(blank,far,5,[0,0,255],-1)	
+			cv.Line(blank,start,end,[0,255,0],2)				
+			if d > 20:
+				cv.Circle(blank,far,5,[0,0,255],-1)
+				noOfDefects=noOfDefects+1
+		print noOfDefects		
 		x,(p,q),radius = cv.MinEnclosingCircle(contours2)	
 		if x:
-			cv.Circle(blank,(int(p),int(q)),int(radius),[0,0,255],1)			
-		mouse.move(p*width/w,q*height/h)			
+			cv.Circle(blank,(int(p),int(q)),int(radius),[0,0,255],1)
+		X,Y = ((p-w/2)*width*5/(w*4))+width/2,((q-h/2)*height*5/(h*4))+height/2
+		if X < 0:
+			X = 0
+		else										
+			X=min(X,width)
+			
+		if Y < 0:
+			Y = 0
+		else:
+			Y=min(Y,height)
+					
+		if noOfDefects >= 3:				
+			mouse.move(X,Y)
+		elif noOfDefects > 1:	
+			mouse.click(X,Y)		
 	cv.ShowImage('Image_Window',blank)
 	if cv.WaitKey(2)== 27:
 		break
