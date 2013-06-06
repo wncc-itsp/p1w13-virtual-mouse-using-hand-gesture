@@ -1,1 +1,0 @@
-I am getting selection timeout error while using a program containing taking a image from webcam
